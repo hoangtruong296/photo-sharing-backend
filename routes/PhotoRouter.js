@@ -10,19 +10,13 @@ router.get("/photosOfUser/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    // Fetch photos and populate comment users
     const photos = await Photo.find({ user_id: id })
       .populate({
-        path: "comments.user",
+        path: "comments.user_id",
         select: "_id first_name last_name"
       })
       .exec();
 
-    if (!photos) {
-      return res.status(400).json({ error: "User not found or no photos" });
-    }
-
-    // Convert Mongoose model -> plain JS objects
     const result = photos.map((photo) => ({
       _id: photo._id,
       user_id: photo.user_id,
@@ -32,11 +26,11 @@ router.get("/photosOfUser/:id", async (req, res) => {
         _id: c._id,
         comment: c.comment,
         date_time: c.date_time,
-        user: c.user
+        user: c.user_id     // ⚡ vì populate đã biến user_id -> object User
           ? {
-              _id: c.user._id,
-              first_name: c.user.first_name,
-              last_name: c.user.last_name
+              _id: c.user_id._id,
+              first_name: c.user_id.first_name,
+              last_name: c.user_id.last_name
             }
           : null
       }))
@@ -44,8 +38,10 @@ router.get("/photosOfUser/:id", async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 module.exports = router;

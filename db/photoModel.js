@@ -6,11 +6,9 @@ const mongoose = require("mongoose");
 const commentSchema = new mongoose.Schema({
   comment: String,
   date_time: { type: Date, default: Date.now },
-
-  // phải đặt tên là "user", không phải "user_id"
-  user: {
+  user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "Users"
   }
 });
 
@@ -25,7 +23,7 @@ const photoSchema = new mongoose.Schema({
   // ref tới User
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "Users"
   },
 
   comments: [commentSchema]
