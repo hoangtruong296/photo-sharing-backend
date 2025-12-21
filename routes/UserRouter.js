@@ -2,9 +2,6 @@ const express = require("express");
 const User = require("../db/userModel");
 const router = express.Router();
 
-// router.post("/", async (request, response) => {
-  
-// });
 
 router.get("/list", async (req, res) => {
     try {
@@ -32,5 +29,41 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+router.post("/newuser", async (req, res) => {
+    const { first_name,
+            last_name,
+            login_name,
+            password,
+            location,
+            description,
+            occupation } = req.body;
+    if(!login_name || !password){
+        return res.status(400).json({error: "Login name and password are required"});
+    }
+    if(!first_name || !last_name){
+        return res.status(400).json({error: "First name and last name are required"});
+    }
+    const exist_user = await User.findOne({login_name});
+    if(exist_user){
+        return res.status(400).json({error: "Login name is already exists."});
+    }
+    const user = new User({
+        first_name,
+        last_name,
+        login_name,
+        password,
+        location,
+        description,
+        occupation
+    });
+    await user.save();
+
+    res.status(200).json({
+        _id: user._id, 
+        login_name: user.login_name,
+        first_name: user.first_name,
+        last_name: user.last_name
+    });
+});
 
 module.exports = router;

@@ -2,10 +2,6 @@ const express = require("express");
 const Photo = require("../db/photoModel");
 const router = express.Router();
 
-/**
- * GET /photosOfUser/:id
- * Trả về toàn bộ ảnh của user + comments
- */
 router.get("/photosOfUser/:id", async (req, res) => {
   const id = req.params.id;
 
@@ -26,7 +22,7 @@ router.get("/photosOfUser/:id", async (req, res) => {
         _id: c._id,
         comment: c.comment,
         date_time: c.date_time,
-        user: c.user_id     // ⚡ vì populate đã biến user_id -> object User
+        user: c.user_id     
           ? {
               _id: c.user_id._id,
               first_name: c.user_id.first_name,
@@ -43,5 +39,67 @@ router.get("/photosOfUser/:id", async (req, res) => {
   }
 });
 
+router.post("/commentsOfPhoto/:photo_id", async (req, res) => {
+  const {comment} = req.body;
+  if(!comment || comment.trim() === ""){
+    return res.status(400).json({error: "Emty comment."});
+  }
+  const photo_id = req.params.photo_id;
+  try {
+    const photo = await Photo.findById(photo_id);
+    if(!photo){
+      return res.status(400).json({error: "Photo does not exist."});
+    }
+    photo.comments.push({
+      comment: comment,
+      date_time: new Date(),
+      user_id: req.session.user._id
+    })
+    await photo.save();
+    res.status(200).json(photo);
+  } catch(e){
+    res.status(400).json({error: "Failed to comment."});
+  }
+})
+
+const multer = require("multer");
+const path = require("path");
+const imagesDir = path.join(__dirname, "..", "images");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, imagesDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = file.originalname;
+      // Date.now() + "-" + Math.round(Math.random() * 1e9) +
+      // path.extname(file.originalname);
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+router.post("/new", upload.single("photo"), async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not logged in" });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  try {
+    const photo = new Photo({
+      file_name: req.file.filename,
+      user_id: req.session.user._id,
+      date_time: new Date(),
+      comments: [],
+    });
+
+    await photo.save();
+    res.status(200).json(photo);
+  } catch (e) {
+    res.status(400).json({ error: "Failed to upload photo" });
+  }
+});
 
 module.exports = router;
