@@ -1,6 +1,7 @@
 const express = require("express");
 const User = require("../db/userModel");
 const router = express.Router();
+const session = require("express-session");
 
 router.post("/login", async (req, res) => {
     const {login_name, password} = req.body;
@@ -16,11 +17,7 @@ router.post("/login", async (req, res) => {
         if(user.password !== password){
             return res.status(400).json({error: "Login name or password is wrong."});
         }
-        req.session.user = {
-            _id: user._id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-        }
+        req.session.user = user;
         res.status(200).json(req.session.user);
 
     } catch(e){

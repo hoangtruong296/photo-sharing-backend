@@ -1,6 +1,8 @@
 const express = require("express");
 const Photo = require("../db/photoModel");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
 
 router.get("/photosOfUser/:id", async (req, res) => {
   const id = req.params.id;
@@ -62,8 +64,52 @@ router.post("/commentsOfPhoto/:photo_id", async (req, res) => {
   }
 })
 
+router.delete("/:photoId", async (req, res) => {
+  const photo_id = req.params.photoId;
+  try {
+    const photo = await Photo.findById(photo_id);
+    if(!photo){
+      return res.status(400).json({error: "Photo does not exist."});
+    }
+
+    const imagePath = path.join(__dirname, "..", "images", photo.file_name);
+
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.error("Failed to delete image file:", err);
+      }
+    });
+
+    await Photo.findByIdAndDelete(photo_id);
+    res.status(200).json({message: "Photo deleted."});  
+  } catch (e){
+    res.status(400).json({error: "Server error."})
+  }
+})
+
+router.delete("/:photoId/comment/:commentId", async (req, res) => {
+  const {photoId, commentId} = req.params;
+  try {
+    const photo = await Photo.findById(photoId);
+    if(!photo){
+      return res.status(400).json({error: "Photo does not exist."});
+    }
+    const comment = photo.comments.id(commentId);
+    if(!comment){
+      return res.status(400).json({error: "Comment does not exist."});
+    }
+    // if (comment.user.toString() !== req.session.user._id) {
+    //   return res.status(403).send("Not authorized");
+    // }
+    comment.deleteOne();
+    await photo.save();
+    res.status(200).json({message: "Comment deleted."});  
+  } catch (e){
+    res.status(400).json({error: "Server error."})
+  }
+})
+
 const multer = require("multer");
-const path = require("path");
 const imagesDir = path.join(__dirname, "..", "images");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

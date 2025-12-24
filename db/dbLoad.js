@@ -18,8 +18,8 @@ async function dbLoad() {
   }
 
   await User.deleteMany({});
-  // await Photo.deleteMany({});
-  // await SchemaInfo.deleteMany({});
+  await Photo.deleteMany({});
+  await SchemaInfo.deleteMany({});
 
   const userModels = models.userListModel();
   const mapFakeId2RealId = {};
@@ -47,56 +47,56 @@ async function dbLoad() {
       console.error("Error create user", error);
     }
   }
-  // const photoModels = [];
-  // const userIDs = Object.keys(mapFakeId2RealId);
-  // userIDs.forEach(function (id) {
-  //   photoModels.push(...models.photoOfUserModel(id));
-  // });
-  // for (const photo of photoModels) {
-  //   photoObj = await Photo.create({
-  //     file_name: photo.file_name,
-  //     date_time: photo.date_time,
-  //     user_id: mapFakeId2RealId[photo.user_id],
-  //   });
-  //   photo.objectID = photoObj._id;
-  //   if (photo.comments) {
-  //     photo.comments.forEach(function (comment) {
-  //       photoObj.comments = photoObj.comments.concat([
-  //         {
-  //           comment: comment.comment,
-  //           date_time: comment.date_time,
-  //           user_id: comment.user.objectID,
-  //         },
-  //       ]);
-  //       console.log(
-  //         "Adding comment of length %d by user %s to photo %s",
-  //         comment.comment.length,
-  //         comment.user.objectID,
-  //         photo.file_name,
-  //       );
-  //     });
-  //   }
-  //   try {
-  //     await photoObj.save();
-  //     console.log(
-  //       "Adding photo:",
-  //       photo.file_name,
-  //       " of user ID ",
-  //       photoObj.user_id,
-  //     );
-  //   } catch (error) {
-  //     console.error("Error create photo", error);
-  //   }
-  // }
+  const photoModels = [];
+  const userIDs = Object.keys(mapFakeId2RealId);
+  userIDs.forEach(function (id) {
+    photoModels.push(...models.photoOfUserModel(id));
+  });
+  for (const photo of photoModels) {
+    photoObj = await Photo.create({
+      file_name: photo.file_name,
+      date_time: photo.date_time,
+      user_id: mapFakeId2RealId[photo.user_id],
+    });
+    photo.objectID = photoObj._id;
+    if (photo.comments) {
+      photo.comments.forEach(function (comment) {
+        photoObj.comments = photoObj.comments.concat([
+          {
+            comment: comment.comment,
+            date_time: comment.date_time,
+            user_id: comment.user.objectID,
+          },
+        ]);
+        console.log(
+          "Adding comment of length %d by user %s to photo %s",
+          comment.comment.length,
+          comment.user.objectID,
+          photo.file_name,
+        );
+      });
+    }
+    try {
+      await photoObj.save();
+      console.log(
+        "Adding photo:",
+        photo.file_name,
+        " of user ID ",
+        photoObj.user_id,
+      );
+    } catch (error) {
+      console.error("Error create photo", error);
+    }
+  }
 
-  // try {
-  //   schemaInfo = await SchemaInfo.create({
-  //     version: versionString,
-  //   });
-  //   console.log("SchemaInfo object created with version ", schemaInfo.version);
-  // } catch (error) {
-  //   console.error("Error create schemaInfo", reportError);
-  // }
+  try {
+    schemaInfo = await SchemaInfo.create({
+      version: versionString,
+    });
+    console.log("SchemaInfo object created with version ", schemaInfo.version);
+  } catch (error) {
+    console.error("Error create schemaInfo", reportError);
+  }
   mongoose.disconnect();
 }
 

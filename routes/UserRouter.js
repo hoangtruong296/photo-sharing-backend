@@ -1,7 +1,7 @@
 const express = require("express");
 const User = require("../db/userModel");
 const router = express.Router();
-
+const session = require("express-session");
 
 router.get("/list", async (req, res) => {
     try {
@@ -28,6 +28,30 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({ error: "Not found" });
     }
 });
+
+router.put("/editprofile/:userId", async (req, res) => {
+    const { 
+        first_name,
+        last_name,
+        location,
+        description,
+        occupation 
+    } = req.body;
+    const userId = req.params.userId;
+    try {
+        const user = await User.findByIdAndUpdate(userId, {
+            first_name,
+            last_name,
+            location,
+            description,
+            occupation
+        }, {new: true});
+        req.session.user = user;   
+        res.status(200).json(user);
+    } catch (e){
+        res.status(400).json({error: "Failed to edit."})
+    }
+})
 
 router.post("/newuser", async (req, res) => {
     const { first_name,
